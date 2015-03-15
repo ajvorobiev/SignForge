@@ -59,7 +59,7 @@
 
                 if (!args.Contains("-a"))
                 {
-                    Console.WriteLine("Provice an authority name and press [Enter]");
+                    Console.WriteLine("Provide an authority name and press [Enter]");
                     authorityName = Console.ReadLine();
                 }
                 else
