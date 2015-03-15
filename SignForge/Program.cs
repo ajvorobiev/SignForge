@@ -121,7 +121,7 @@
             Console.WriteLine("Start file verification");
 
             var startInfo = new ProcessStartInfo();
-            startInfo.CreateNoWindow = false;
+            startInfo.CreateNoWindow = true;
             startInfo.UseShellExecute = false;
             startInfo.FileName = "DSCheckSignatures.exe";
             startInfo.Arguments = string.Format("\"{0}\" \"{1}\"", sourcePath, destinationPath);
@@ -159,7 +159,7 @@
 
                 // create signature   
                 var startInfo = new ProcessStartInfo();
-                startInfo.CreateNoWindow = false;
+                startInfo.CreateNoWindow = true;
                 startInfo.UseShellExecute = false;
                 startInfo.FileName = "DSSignFile.exe";
                 startInfo.Arguments = string.Format("\"{0}\" \"{1}\"", privateKey, sourcePboFile);
@@ -219,7 +219,7 @@
         {
             // create signature   
             var startInfo = new ProcessStartInfo();
-            startInfo.CreateNoWindow = false;
+            startInfo.CreateNoWindow = true;
             startInfo.UseShellExecute = false;
             startInfo.FileName = "DSCreateKey.exe";
             startInfo.Arguments = authorityName;
