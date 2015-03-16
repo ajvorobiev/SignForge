@@ -1,4 +1,7 @@
-﻿namespace SignForge
+﻿using System.Reflection;
+using System.Threading;
+
+namespace SignForge
 {
     using System.Diagnostics;
     using System.IO;
@@ -36,6 +39,12 @@
                 WaitForExit();
                 return;
             }
+
+#if WINE
+            typeof(Path).GetField("DirectorySeparatorChar").SetValue(null, '/');  
+            typeof(Path).GetField("AltDirectorySeparatorChar").SetValue(null, '\\');
+            typeof(Path).GetField("VolumeSeparatorChar").SetValue(null, '/');
+#endif
 
             try
             {
@@ -99,6 +108,9 @@
                 // verify keys
                 if (verify)
                 {
+#if WINE
+                    Thread.Sleep(2000);
+#endif
                     VerifyKeys(sourcePath, destinationPath);
                 }
             }
@@ -107,7 +119,7 @@
                 Console.WriteLine(ex.Message);
             }
 
-            WaitForExit();
+            Console.WriteLine("Application Finished");
         }
 
         /// <summary>
@@ -123,8 +135,13 @@
             var startInfo = new ProcessStartInfo();
             startInfo.CreateNoWindow = true;
             startInfo.UseShellExecute = false;
+#if WINE
+            startInfo.FileName = "/usr/bin/wine";
+            startInfo.Arguments = string.Format("{2}\\DSCheckSignatures.exe \"{0}\" \"{1}\"", sourcePath, destinationPath, Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
+#else
             startInfo.FileName = "DSCheckSignatures.exe";
             startInfo.Arguments = string.Format("\"{0}\" \"{1}\"", sourcePath, destinationPath);
+#endif
 
             try
             {
@@ -161,8 +178,13 @@
                 var startInfo = new ProcessStartInfo();
                 startInfo.CreateNoWindow = true;
                 startInfo.UseShellExecute = false;
+#if WINE
+                startInfo.FileName = "/usr/bin/wine";
+                startInfo.Arguments = string.Format("{2}\\DSSignFile.exe \"{0}\" \"{1}\"", privateKey, sourcePboFile, Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
+#else
                 startInfo.FileName = "DSSignFile.exe";
                 startInfo.Arguments = string.Format("\"{0}\" \"{1}\"", privateKey, sourcePboFile);
+#endif
 
                 try
                 {
@@ -171,6 +193,9 @@
                     using (Process exeProcess = Process.Start(startInfo))
                     {
                         if (exeProcess != null) exeProcess.WaitForExit();
+#if WINE
+                        Thread.Sleep(2000);
+#endif
                     }
                 }
                 catch (Exception ex)
@@ -221,8 +246,13 @@
             var startInfo = new ProcessStartInfo();
             startInfo.CreateNoWindow = true;
             startInfo.UseShellExecute = false;
+#if WINE
+            startInfo.FileName = "/usr/bin/wine";
+            startInfo.Arguments = string.Format("{1}\\DSCreateKey.exe {0}", authorityName, Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
+#else
             startInfo.FileName = "DSCreateKey.exe";
             startInfo.Arguments = authorityName;
+#endif
 
             try
             {
@@ -238,10 +268,22 @@
                 throw new ApplicationException(string.Format("Creation of key files aborted: {0}", ex.Message));
             }
 
+            var pubKeyFilename = string.Format("{0}.bikey", authorityName);
+            var prvKeyFilename = string.Format("{0}.biprivatekey", authorityName);
+#if WINE
+            Thread.Sleep(2000); // give time for the files to appear
+            var publicKey = string.Format("{1}/{0}", pubKeyFilename, AssemblyDirectory);
+            var privateKey = string.Format("{1}/{0}", prvKeyFilename, AssemblyDirectory);
+            var destPublicFileName = string.Format("{0}/{1}", destinationPath, pubKeyFilename);
+            destPrivateFileName = privateKey;
+
+#else
             var publicKey = string.Format("{0}.bikey", authorityName);
             var privateKey = string.Format("{0}.biprivatekey", authorityName);
-
             var destPublicFileName = string.Format("{0}\\{1}", destinationPath, publicKey);
+            destPrivateFileName = privateKey;
+#endif
+
 
             if (File.Exists(publicKey))
             {
@@ -252,22 +294,16 @@
             }
             else
             {
-                throw new ApplicationException("Cannot find the generated public key file!");
+                throw new ApplicationException("Cannot find the generated public key file: " + publicKey);
             }
 
-            destPrivateFileName = string.Format("{0}\\{1}", destinationPath, privateKey);
+            
 
-            if (File.Exists(privateKey))
+            if (!File.Exists(privateKey))
             {
-                if (File.Exists(destPrivateFileName))
-                    File.Delete(destPrivateFileName);
+               throw new ApplicationException("Cannot find the generated private key file: " + privateKey);
+            }
 
-                File.Move(privateKey, destPrivateFileName);
-            }
-            else
-            {
-                throw new ApplicationException("Cannot find the generated private key file!");
-            }
         }
 
         /// <summary>
@@ -292,6 +328,23 @@
         private static void WaitForExit()
         {
             Console.ReadKey();
+        }
+
+        /// <summary>
+        /// Gets the assembly directory in unix friendly format.
+        /// </summary>
+        /// <value>
+        /// The assembly directory.
+        /// </value>
+        public static string AssemblyDirectory
+        {
+            get
+            {
+                string codeBase = Assembly.GetExecutingAssembly().CodeBase;
+                UriBuilder uri = new UriBuilder(codeBase);
+                string path = Uri.UnescapeDataString(uri.Path);
+                return Path.GetDirectoryName(path).Replace("Z:","");
+            }
         }
     }
 }

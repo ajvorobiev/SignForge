@@ -8,13 +8,16 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Wine|Any CPU = Wine|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{FAEE2C84-B483-44E8-9D9A-5ABF4BEA8C36}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FAEE2C84-B483-44E8-9D9A-5ABF4BEA8C36}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FAEE2C84-B483-44E8-9D9A-5ABF4BEA8C36}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FAEE2C84-B483-44E8-9D9A-5ABF4BEA8C36}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FAEE2C84-B483-44E8-9D9A-5ABF4BEA8C36}.Wine|Any CPU.ActiveCfg = Wine|Any CPU
+		{FAEE2C84-B483-44E8-9D9A-5ABF4BEA8C36}.Wine|Any CPU.Build.0 = Wine|Any CPU
+		{FAEE2C84-B483-44E8-9D9A-5ABF4BEA8C36}.Release|Any CPU.ActiveCfg = Wine|Any CPU
+		{FAEE2C84-B483-44E8-9D9A-5ABF4BEA8C36}.Release|Any CPU.Build.0 = Wine|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
