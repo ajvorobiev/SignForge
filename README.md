@@ -18,6 +18,8 @@ Arguments:
 
 `-v` - (OPTIONAL) verify all files using DSCheckSignatures.
 
+`-o` - (OPTIONAL) If the keys already exist, override them anyway. If this flag is not set then the already existing keys will be used for signing.
+
 `-s *source*` - folder where the pbos that need to be signed reside.
 
 `-a *name*` - (OPTIONAL) authority name. If argument not provided then prompt.
