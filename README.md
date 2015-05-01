@@ -7,7 +7,7 @@ Sign all PBO files in one folder with a newly generated key file.
 Unpack the files somewhere in a an empty folder.
 
 ```
-SignForge.exe [help] -s "source pbo files" [-a "authority name"] [-d "destination folder"] [-v] [-r]
+SignForge.exe [help] -s "source pbo files" [-a "authority name"] [-d "destination folder"] [-v] [-r] [-o]
 ```
 
 Arguments:
