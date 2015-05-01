@@ -30,6 +30,7 @@ namespace SignForge
                                     "\r\n" +
                                     "help - (OPTIONAL) display the help information\r\n" +
                                     "-r - (OPTIONAL) remove all old .bisign files from source folder\r\n" +
+                                    "-o - (OPTIONAL) override .bikey and .biprivatekey if they exist in the destination folder\r\n" +
                                     "-v - (OPTIONAL) verify all files\r\n" +
                                     "-s *source* - folder where the pbos that need to be signed reside\r\n" +
                                     "-a *name* - (OPTIONAL) authority name. If argument not provided then prompt\r\n" +
@@ -55,6 +56,10 @@ namespace SignForge
                 // -v - (OPTIONAL) verify all files
                 var verify = args.Contains("-v");
                 Console.WriteLine("Verify flag set to: {0}", verify);
+
+                // -o - (OPTIONAL) override keys
+                var over = args.Contains("-o");
+                Console.WriteLine("Override flag set to: {0}", over);
 
                 // -s - folder where the pbos that need to be signed reside
                 string sourcePath;
@@ -82,7 +87,6 @@ namespace SignForge
                 Console.WriteLine("Authority set to: {0}", authorityName);
 
                 // -d - (OPTIONAL) folder to put private and public keys into
-
                 string destinationPath = !args.Contains("-d") ? sourcePath : args[args.ToList().FindIndex(x => x == "-d") + 1];
 
                 Console.WriteLine("Source path set to: {0}", destinationPath);
@@ -97,7 +101,7 @@ namespace SignForge
                 string privateKey;
 
                 // create the signatures
-                CreateSignatureFiles(authorityName, destinationPath, out privateKey);
+                CreateSignatureFiles(authorityName, destinationPath, over, out privateKey);
 
                 // clean up if the flag is set
                 RemoveOldSignatures(remove, sourcePath);
@@ -238,10 +242,46 @@ namespace SignForge
         /// </summary>
         /// <param name="authorityName">Name of the authority.</param>
         /// <param name="destinationPath">The destination path.</param>
+        /// <param name="over">Override the files if keys for same authority exist</param>
         /// <param name="destPrivateFileName">The private key file location</param>
         /// <exception cref="System.ApplicationException"></exception>
-        private static void CreateSignatureFiles(string authorityName, string destinationPath, out string destPrivateFileName)
+        private static void CreateSignatureFiles(string authorityName, string destinationPath, bool over,out string destPrivateFileName)
         {
+            var pubKeyFilename = string.Format("{0}.bikey", authorityName);
+            var prvKeyFilename = string.Format("{0}.biprivatekey", authorityName);
+#if WINE
+            Thread.Sleep(2000); // give time for the files to appear
+            var publicKey = string.Format("{1}/{0}", pubKeyFilename, AssemblyDirectory);
+            var privateKey = string.Format("{1}/{0}", prvKeyFilename, AssemblyDirectory);
+            var destPublicFileName = string.Format("{0}/{1}", destinationPath, pubKeyFilename);
+            destPrivateFileName = privateKey;
+
+#else
+            var publicKey = string.Format("{0}.bikey", authorityName);
+            var privateKey = string.Format("{0}.biprivatekey", authorityName);
+            var destPublicFileName = string.Format("{0}\\{1}", destinationPath, publicKey);
+            destPrivateFileName = privateKey;
+#endif
+
+            // if override is not set and keys all exist
+            if (!over && File.Exists(privateKey) && File.Exists(destPublicFileName))
+            {
+                Console.WriteLine("Override not set and all files were found. Skipping creation of new keys...");
+                return;
+            }
+
+            // if no override flag set but keys dont exixt then make them
+            if (!over && (!File.Exists(privateKey) || !File.Exists(destPublicFileName)))
+            {
+                Console.WriteLine("Override was set but either one or all of the keys were not found. Proceeding to generate new ones...");
+            }
+
+            // if override set make keys anyway
+            if (over)
+            {
+                Console.WriteLine("Override enabled. Proceeding to geenrate new keys...");
+            }
+
             // create signature   
             var startInfo = new ProcessStartInfo();
             startInfo.CreateNoWindow = true;
@@ -268,21 +308,7 @@ namespace SignForge
                 throw new ApplicationException(string.Format("Creation of key files aborted: {0}", ex.Message));
             }
 
-            var pubKeyFilename = string.Format("{0}.bikey", authorityName);
-            var prvKeyFilename = string.Format("{0}.biprivatekey", authorityName);
-#if WINE
-            Thread.Sleep(2000); // give time for the files to appear
-            var publicKey = string.Format("{1}/{0}", pubKeyFilename, AssemblyDirectory);
-            var privateKey = string.Format("{1}/{0}", prvKeyFilename, AssemblyDirectory);
-            var destPublicFileName = string.Format("{0}/{1}", destinationPath, pubKeyFilename);
-            destPrivateFileName = privateKey;
-
-#else
-            var publicKey = string.Format("{0}.bikey", authorityName);
-            var privateKey = string.Format("{0}.biprivatekey", authorityName);
-            var destPublicFileName = string.Format("{0}\\{1}", destinationPath, publicKey);
-            destPrivateFileName = privateKey;
-#endif
+            
 
 
             if (File.Exists(publicKey))
@@ -296,8 +322,6 @@ namespace SignForge
             {
                 throw new ApplicationException("Cannot find the generated public key file: " + publicKey);
             }
-
-            
 
             if (!File.Exists(privateKey))
             {
